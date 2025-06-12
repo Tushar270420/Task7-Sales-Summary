@@ -1,0 +1,44 @@
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+# Create and connect to the database
+conn = sqlite3.connect("sales_data.db")
+cursor = conn.cursor()
+
+# Create a table called 'sales'
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS sales (
+    id INTEGER PRIMARY KEY,
+    product TEXT,
+    quantity INTEGER,
+    price REAL
+)
+""")
+
+# Insert dummy data
+sales_data = [
+    ("Product A", 10, 15.0),
+    ("Product B", 5, 20.0),
+    ("Product A", 8, 15.0),
+    ("Product C", 12, 10.0),
+    ("Product B", 7, 20.0)
+]
+
+cursor.executemany("INSERT INTO sales (product, quantity, price) VALUES (?, ?, ?)", sales_data)
+conn.commit()
+query = """
+SELECT product, 
+       SUM(quantity) AS total_qty, 
+       SUM(quantity * price) AS revenue 
+FROM sales 
+GROUP BY product
+"""
+
+df = pd.read_sql_query(query, conn)
+print(df)
+df.plot(kind='bar', x='product', y='revenue', legend=False)
+plt.title("Revenue by Product")
+plt.xlabel("Product")
+plt.ylabel("Revenue")
+plt.tight_layout()
+plt.show()
